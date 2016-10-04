@@ -1,0 +1,177 @@
+---
+title: "McNally_4"
+author: "Sean McNally"
+date: "October 4, 2016"
+output: html_document
+---
+##Hypothesis Testing 
+###1) W&S Chapter 6 questions 15, 21, and 29
+####15.) For the following alternative hypotheses, give the appropriate null hypothesis.  
+**a. Pygmy mammoths and continental mammoths differ in their mean femur lengths**  
+*H0- Pygmy mammoths and continental mamoths have the same mean femur lengths*  
+**b. Patients who take phentermine and topiramate lose weight at a different rate than control patients wihtout these drugs.**  
+*H0- Patients who take phentermine and topiramate lose weight at the same rate than control patients without these drugs.*  
+**c. Patients who take phentermine and topiramate have different proporations of their babies born with cleft palates than do patients not taking these drugs.**  
+*H0- Patients who take phentermin and topiramate have the same proporations of their babies born with cleft palates than do patients not taking these drugs*  
+**d. Shoppers on average buy different amounts of candy when Christams music is playing in the shop compared to when the usual type of music is playing**  
+*H0- Shoppers on average buy the same amounts of candy when Christmas music is playing in the shop compared to when the usualy type of music is playing*  
+**e. Male white-collared manakins (a tropical bird) dance more often when females are present than when they are absent**  
+*H0- Male white-collard manakins do not dance when females are present than when they are absent*  
+
+####21.) Imagine that two researchers independently carry out clinical trails to test the same null hypothesis, that COX-2 selective inhibiotrs (which are used to treat arthritis) have no effect on the risk of cardiac arrest. They use the same population for their study, but one experimenter uses a sample size of 60 participants, whereas the other uses a sample size of 100. Assume that all other aspects of the studies, including significance levels, are the same between the two studies.  
+**a. Which study has the higher probability of a Type II error, the 60-participant study or the 100-participant study?**  
+The study with the higherr probability of a Type II error is 60-participant study.  
+**Which study has higher power** 
+The study with 100-participants has higher power.  
+**c. Which study has the higher probability of a Type I error?**  
+They both share the same signficance levels and thus both set the same probability of a Type I error.  
+**d. Should the tests be one-tailed or two-tailed?**  
+I would use a two-tailed test. This would test the stated null hypothesis by analyzing both directions of our signficant levels. 
+
+####29.) A team of researchers conducted 100 independent hypothesis tests using a singficance level of a = 0.05.  
+**a. If all 100 null hypotheses were true, what is the probability that the researches would reject none of them?**  
+a = 0.05 so the probability of rejecting none of them is 0.05 or 5%  
+**b. If all 100 null hypotheses were true, how many of these tests on average are expected to reject the null hypothesis?**  
+5% of 100 or 5 tests
+
+###2) W&S Chapter 7 question 22 - use R to calculate a p-value
+####22.) In a test of Murphy's law, pieces of taots were buttered on one side and then dropped. Murphy's law predicts that they will land butter-side down. Out of 9821 slices of toast dropped, 6101 landed butter-side down.  
+**a. What is a 95% confidence interval for the probability of a piece of toast landing butter-side down?**  
+```{r, echo=TRUE}
+#We could calculate the mean the SD to determine the CI the long way, assuming norm dist.
+?binom.test #Issac told me this function can calculate CI 
+#where x = number of successes
+#where n = number of trials 
+#conf.level - 0.95
+#p = ? 
+binom.test(x = 6101, n = 9821, conf.level = 0.95)
+```
+Our confidence interval says that our probability of producing this result will fall between 0.61 and 0.63. Meaning we will typically find this result between 61-63% of the time. For this specific test we found that it was 0.62. 
+
+**b. Using the results of part (a), is it plausible that there is a 50:50 chance of the toast landing butter-side down or butter-side up?**
+```{r, echo=TRUE}
+#calculate a p value, similar to what we did in lab 
+pbinom(6101, size = 9821, prob = 0.5) #pbinom by default looks at the lowest tail
+#What does a pvalue of 1 mean?????
+#the questions wants to know is it plausible that there is a 50:50 chance so will calculate the pbinom for the upper tail as well
+pbinom(6101, size = 9821, prob = 0.5, lower.tail = FALSE)
+```
+Based on our upper tail p value (which is extremely small) Murphy's law is true and the probability of seeing the toast fall butter side down will be favored. I don't think it is plausible for the toast to have a 50:50 chance of landing butter side up or butter side down.
+
+###3) From the Lab: Many SDs and Alphas
+**Here’s the exercise we started in lab. Feel free to look back copiously at the lab handout if you’re getting stuck. Remember, for each step, write-out in comments what you want to do, and then follow behing with code.**  
+
+####Now, let’s assume an average population-wide resting heart rate of 80 beats per minute with a standard deviation of 6 BPM.
+```{r, echo=TRUE}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(ggthemes)
+#Population mean = 80
+#Population sd = 6
+```
+
+####A given drug speeds people’s heart rates up on average by 5 BPM. What sample size do we need to achieve a power of 0.8?
+
+####3.1) Start up your simulation
+
+**Make a simulated data frame to look at the effects of multiple sample sizes: from 1-20, with 500 simulations per sample size, also multiple SD values, from 3 through 10 (just 3:10, no need for non-integer values). You’re going to want crossing with your intitial data frame of just sample sizes and a vector of sd values to start. Then generate samples from the appropriate random normal distribution.**
+```{r, echo=TRUE}
+#create a sample size data.frame w/ 1-20 sample size at 500 simulations
+heart_drug_df <- data.frame(samp_size = rep(1:20, 500))
+#create multiple sd values using c() combine vaues from 3:10
+sd_heart_drug <- c(3:10)
+#what is crossing?
+?crossing
+#apply crossing function to cross the initial data frame of sample sizes and sd values 
+heart_drug_df <- heart_drug_df %>%
+  crossing(sd = sd_heart_drug)
+#with our data frame estabished we can now start simulations but we first have to tell R average resting heart rate and the effect of the drug on the average heart rate 
+null_m <- 80
+m <- null_m + 5
+sim_heart_drug <- heart_drug_df %>%
+  #group by row, as each is 1 sim
+  group_by(sims = 1:n()) %>%
+  #simulated draw from our population 
+  mutate(samp_mean = mean(rnorm(samp_size, m, sd_heart_drug))) %>% #mean or a random normal draw of our predefined sample size with a predefined mean and sd of our population 
+  #clean up 
+  ungroup()
+#plot
+ggplot(data = sim_heart_drug,
+       mapping = aes(x = samp_size, y = samp_mean)) +
+  geom_jitter(alpha = 0.4, size = 3) + theme_bw()
+```
+
+####3.2) Z!
+**OK, now that you’ve done that, calculate the results from z-tests. Plot p by sample size, using facet_wrap for different SD values.**
+```{r, echo=TRUE}
+p_heart_drug_df <- sim_heart_drug %>%
+  #first, sample SE
+  mutate(se_y = sd/sqrt(samp_size)) %>%
+  #next calculate z (estimated sample mean - population mean/se)
+  mutate(z = (samp_mean - null_m)/se_y) %>%
+  #last calculate p (simulated p value)
+  #based off our hypothesis we expect the drug to increase heart rate so we want the upper tail.
+  #use lower.tail = FALSE to get the upper tail 
+  #our distribution (mean and sd) are already defined by our simulation 
+  mutate(p = pnorm(abs(z), lower.tail = FALSE))
+#plot p by sample_size 
+#what is facet_wrap
+?facet_wrap
+#facet_wrap will create an sd feature 
+ggplot(p_heart_drug_df, mapping = aes(x = samp_size, y = p)) +
+  geom_point() +
+  facet_wrap(~sd) +
+  theme_bw()
+```
+
+####3.3) P and Power
+**Now plot power for an alpha of 0.05, but use color for different SD values. Include our threshold power of 0.8.**
+```{r, echo=TRUE}
+power_heart_drug_df <- p_heart_drug_df %>%
+  #for each sample size and SD 
+  group_by(samp_size, sd) %>%
+  #calculate type 2 error rate for an alpha of 0.05 (signficance)
+  summarise(error_rate = sum(p > 0.05)/n()) %>%
+  #clean up 
+  ungroup() %>%
+  #calculate power
+  mutate(power = 1 - error_rate)
+
+#Plot
+ggplot(data = power_heart_drug_df, mapping = aes(x = samp_size, y = power, group = sd, color = factor(sd))) + geom_line() + geom_point() + geom_hline(yintercept = 0.8) + theme_bw()
+
+```
+
+####3.4) Many alphas
+
+**Last, use crossing again to explore changing alphas from 0.01 to 0.1. Plot power curves with different alphas as different colors, and use faceting to look at different SDs.**
+```{r, echo=TRUE}
+#look at multiple alphas 
+alpha <- seq(0.01, 0.1, .01)
+#make all combos of my
+alpha_heart_drug_df <- p_heart_drug_df %>%
+  #do the combos!
+  crossing(alpha = alpha) %>%
+  #for each sample size, and alpha
+  group_by(samp_size, alpha, sd) %>%
+  #calculate type 2 error rate
+  summarise(error_rate = sum(p > alpha)/n()) %>%
+  #clean up
+  ungroup() %>%
+  #calculate power
+  mutate(power = 1 - error_rate)
+
+#plot
+ggplot(data = alpha_heart_drug_df, 
+       mapping = aes(x = samp_size, y = power, color = factor(alpha), group = alpha)) + 
+  geom_point() + geom_line() + facet_wrap (~sd) + geom_hline(yintercept = 0.8) + theme_bw()
+```
+
+####3.5) What does it all mean? What do you learn about how alpha and SD affect power?
+
+Throghout this exercise, I learned that as we increase the sample size and the effect size of our simulation our power increases. In the case of alpha, or signficance level, a small alpha value produces a larger power, which is also affected by sample size. SD is a little tricky because if we have to much noise or variation in the sample population we would need a much larger sample size to have any kind of statistical power. Basically, we want to have a large sample size, small SD, and a resonable alpha for our population in order to have stronger stastical power when analyzing our data. 
+
+####3.6) How do you think that changing the effect size would affect power?
+**You can just answer this without coding out anything. Based on what we’ve learned so far - what do you think?**
+I think that by changing the effect size the power of our statsitical test would also increase. However, if we increase our effect size to much we are also increasing our risk of producing a Type I error. The most important thing is to have a large effect size but not unreal for your population, time, and $$$$.  
